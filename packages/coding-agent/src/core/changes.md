@@ -1,5 +1,30 @@
 # changes
 
+## 2026-08-26 - Uncaught-crash writer on the debug-log lane
+
+### What changed
+
+- `packages/coding-agent/src/core/hidden-stdout-log.ts`: factored the existing append (timestamp
+  header + `redactSensitiveOutput` + `0o600` debug log) into a private `appendDebugLogEntry` and
+  added the sibling `appendUncaughtCrashLog(origin, error)`, which writes the distinct
+  `uncaught crash (<origin>)` header plus the error identity and stack. `appendHiddenTuiStdout`
+  keeps its exact `hidden stdout while TUI active` header and empty-chunk skip.
+
+### Why
+
+- The interactive crash handler needed a redacted, permission-locked lane into the brand debug log,
+  and the hidden-stdout writer already owned that lane. A distinct header keeps crash records
+  greppable and prevents them from being read as suppressed TUI stdout.
+
+### Why an extension could not handle it
+
+- Fork-only file (absent from the pinned upstream tree); it is the core writer for the brand debug
+  log and runs inside the fatal crash path, where no extension code executes.
+
+### Expected merge conflict zones
+
+- NONE: the file does not exist upstream.
+
 ## 2026-08-26 - Reject no-progress manual compaction before active abort
 
 ### What changed

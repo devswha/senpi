@@ -10,6 +10,7 @@
 - Idle warm compaction now applies as soon as its summary finishes generating while the session is idle, so the `[compaction]` block renders during the idle gap and the next message stacks below it instead of the prompt waiting behind a compaction that was generated minutes earlier; stale or racy applies keep the previous warm-hold behavior.
 - The canonical user message no longer renders above the `[compaction]` block when a compaction applies during prompt admission: the pending-echo reconciliation now appends it after the rebuilt transcript, matching the session's canonical order.
 - An uncaught dead-terminal error (e.g. a stdin read EIO after the controlling terminal detached) no longer prints the `exiting due to uncaughtException` banner and exits 1: `uncaughtCrash` routes it to the silent `emergencyTerminalExit()`, matching terminal write errors. `isDeadTerminalError` now also accepts Bun's raw `errno: 5`/`-5` shape.
+- A crash that kills the interactive session is now recorded in the debug log (`<agent dir>/<brand>-debug.log`) as an `uncaught crash (<origin>)` entry with the error and stack, redacted and written with `0600` permissions. Previously the crash banner reached only the terminal, so closing the terminal — or a crash caused by the terminal itself — left no evidence to diagnose. The crash path itself is unchanged: same ordering, same exit code, same banner, and a failed log write cannot affect it.
 ### Added
 
 ### Changed

@@ -88,7 +88,7 @@ import type {
 } from "../../core/extensions/index.ts";
 import { buildNoticeBox, type NoticeLine, type NoticeSpec } from "../../core/extensions/notice/index.ts";
 import { FooterDataProvider, type ReadonlyFooterDataProvider } from "../../core/footer-data-provider.ts";
-import { appendHiddenTuiStdout } from "../../core/hidden-stdout-log.ts";
+import { appendHiddenTuiStdout, appendUncaughtCrashLog } from "../../core/hidden-stdout-log.ts";
 import { buildHighReasoningWarning } from "../../core/high-reasoning-warning.ts";
 import { configureHttpDispatcher, formatHttpIdleTimeoutMs } from "../../core/http-dispatcher.ts";
 import { type AppKeybinding, KeybindingsManager } from "../../core/keybindings.ts";
@@ -5541,6 +5541,12 @@ export class InteractiveMode {
 		} catch {}
 		try {
 			this.ui.stop();
+		} catch {}
+		// Record the crash before the terminal handoff: the banner below only reaches
+		// terminal scrollback, which is gone when the terminal is closed or is itself
+		// the thing that failed. A logging failure must never alter the crash path.
+		try {
+			appendUncaughtCrashLog(origin, error);
 		} catch {}
 		restoreInteractiveStderr();
 		console.error(`${APP_NAME} exiting due to uncaughtException:`);

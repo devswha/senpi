@@ -1,5 +1,33 @@
 # changes
 
+## 2026-08-26 - Record uncaught crashes in the brand debug log
+
+### What changed
+
+- `packages/coding-agent/src/modes/interactive/interactive-mode.ts`: `uncaughtCrash` calls
+  `appendUncaughtCrashLog(origin, error)` immediately before `restoreInteractiveStderr()`, wrapped
+  in a `try {} catch {}` so a failed log write cannot alter the crash path. Ordering, exit code,
+  and the stderr banner are unchanged.
+
+### Why
+
+- `uncaughtCrash` restores the real stderr and prints the banner to the terminal, so a crash only
+  ever existed in terminal scrollback. When the terminal is closed — or when the crash *is* a
+  terminal/EIO failure — the diagnosis has zero evidence; the 2026-08-26 EIO investigation found no
+  crash record in the brand debug log for exactly this reason. Writing before the terminal handoff
+  means the record survives the very failures that destroy the scrollback.
+
+### Why an extension could not handle it
+
+- The handler is the process-level `uncaughtException` listener the interactive mode installs, and
+  it exits the process a few statements later. No extension hook runs inside that window, and an
+  extension's own `process.on("uncaughtException")` would be appended after this prepended listener,
+  i.e. after `process.exit(1)`.
+
+### Expected merge conflict zones
+
+- LOW: `uncaughtCrash` body in `interactive-mode.ts` (a single guarded call plus one import).
+
 ## 2026-08-26 - Append canonical user message after compaction rebuild
 
 ### What changed
